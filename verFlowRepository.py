@@ -101,3 +101,24 @@ def repoDefaultConfig():
   defConfig.set("core", "bare", "false")
 
   return defConfig
+
+#function for finding the root of repo
+def repoFind(path = ".",required = True):
+  path = os.path.realpath(path)
+  if os.path.isdir(os.path.join(path, ".git")):
+    return verFlowRepository(path)
+  
+  #if we don't find the repo, recurse back in directories to find it in parent dirs
+  parent = os.path.realpath(os.path.join(path,".."))
+  
+  #if we are already in parent?
+
+  if parent == path:
+    #bottom case
+    if required:
+      raise Exception("No verFlow repository found %s" % path)
+    else:
+      return None
+    
+  return repoFind(parent,required)
+    
