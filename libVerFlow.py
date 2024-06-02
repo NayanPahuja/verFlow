@@ -18,6 +18,8 @@ import re
 import zlib
 #importing other files
 import commandBridge
+
+
 argparser = argparse.ArgumentParser(description='VerFlow: VCS for Coding Projects')  # creating an argument parser object
 argsubparsers = argparser.add_subparsers(title='Commands', dest='command')  # creating a subparser object
 argsubparsers.required = True  # subparser is required
@@ -31,6 +33,38 @@ argsp.add_argument("path",
                    default=".",
                    help="Where to create the repository"
                    )
+## Subparser for cmd_cat-file handler
+argsp = argsubparsers.add_parser("cat-file",help="Output content of repository objects")
+argsp.add_argument("type",
+                   metavar="type",
+                   choices=["blob","commit","tree","tag"],
+                   help="Specify the type of object")
+argsp.add_argument("object",
+                   metavar="object",
+                   help="Object to display")
+
+##Subparser for cmd_hash-object handler
+argsp = argsubparsers.add_parser("hash-object", help="Hash and compute object ID, optionally creates a blob from a file")
+argsp.add_argument("-t",
+                   metavar="type",
+                   dest="type",
+                   choices=["blob","commit","tree","tag"],
+                   default="blob",
+                   help="Specify the object type")
+argsp.add_argument("-w",
+                   dest="write",
+                   action = "store_true",
+                   help="Write the object back to database")
+argsp.add_argument("path",
+                   help="Read the object from <file>")
+
+## Subparser for cmd_log handler
+
+argsp = argsubparsers.add_parser("log",help="Display the history of a given commit")
+argsp.add_argument("commit",
+                   default="HEAD",
+                   nargs="?",
+                   help="Commits to start the log at.")
 
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)

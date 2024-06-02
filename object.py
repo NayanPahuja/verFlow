@@ -1,19 +1,10 @@
 # importing standard libraries
-import argparse
 import os
-import collections
-import configparser
-import sys
-from datetime import datetime
-import grp, pwd
-from fnmatch import fnmatch
 import hashlib
-from math import ceil
-import re
 import zlib
 #importing other files
 import verFlowRepository as vfRepo
-import commandBridge
+from kvlmParser import kvlmParse,kvlmSerialize
 
 
 
@@ -92,12 +83,26 @@ def objectWrite(obj, repo=None):
                 # Compress and write
                 f.write(zlib.compress(result))
     return sha
+def objectFind(repo, name, fmt=None, follow=True):
+    return name
 
 class GitBlob(VerFlowObject):
     fmt = b'blob'
 
     def serialize(self):
         return self.blobdata
+    
     def deserialize(self, data):
         self.blobdata = data
        
+class GitCommit(VerFlowObject):
+    fmt = b'commit'
+
+    def deserialize(self, data):
+        self.kvlm = kvlmParse(data)
+    
+    def serialize(self):
+        return kvlmSerialize(self.kvlm)
+    
+    def init(self):
+        self.kvlm = dict()

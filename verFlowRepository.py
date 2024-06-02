@@ -1,7 +1,7 @@
 import configparser
 import os
 
-class verFlowRepository(object):
+class vfREPO(object):
   """A git repository"""
 
   worktree = None
@@ -59,7 +59,7 @@ def repoDir(repo, *path, mkdir=False):
 def repoCreate(path):
   """Create a new repository at path."""
 
-  repo = verFlowRepository(path, True)
+  repo = vfREPO(path, True)
 
   # First we make sure the path either doesn't exist or is an
   # empty dir
@@ -106,7 +106,7 @@ def repoDefaultConfig():
 def repoFind(path = ".",required = True):
   path = os.path.realpath(path)
   if os.path.isdir(os.path.join(path, ".git")):
-    return verFlowRepository(path)
+    return vfREPO(path)
   
   #if we don't find the repo, recurse back in directories to find it in parent dirs
   parent = os.path.realpath(os.path.join(path,".."))
