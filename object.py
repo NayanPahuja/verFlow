@@ -3,26 +3,27 @@ import os
 import hashlib
 import zlib
 #importing other files
-import verFlowRepository as vfRepo
+from verFlowRepository import repoFile
 from kvlmParser import kvlmParse,kvlmSerialize
 
 
 
-class VerFlowObject:
-    def __init__(self, repo, data=None):
-        self.repo = repo
+class VerFlowObject (object):
+    
+    def __init__(self, data=None):
         if data is not None:
             self.deserialize(data)
         else:
             self.init()
         
-    def serialize(self):
+    def serialize(self,repo):
         """This method MUST be implemented by subclasses."""
-        raise NotImplementedError("Must be implemented by subclass")
+        raise Exception("Unimplemented!. Must be implemented by subclasses")
 
     def deserialize(self, data):
         """This method MUST be implemented by subclasses."""
-        raise NotImplementedError("Must be implemented by subclass")
+        raise Exception("Unimplemented!. Must be implemented by subclasses")
+
 
     def init(self):
         pass  # Default implementation
@@ -31,7 +32,7 @@ def objectRead(repo, sha):
     """Read object sha from VerFlow repository repo. Return a
     VerFlowObject whose exact type depends on the object."""
 
-    path = vfRepo.repoFile(repo, "objects", sha[0:2], sha[2:])
+    path = repoFile(repo, "objects", sha[0:2], sha[2:])
 
     if not os.path.isfile(path):
         return None
@@ -45,25 +46,22 @@ def objectRead(repo, sha):
 
         # Read and Validate object size
         y = raw.find(b'\x00', x)
-        size = int(raw[x + 1:y].decode("ascii"))
+        size = int(raw[x:y].decode("ascii"))
 
         # Validate size
         if size != len(raw) - y - 1:
             raise Exception("Malformed object {0}: bad length".format(sha))
 
         # Object type to class mapping
-        object_types = {
-            b'commit': GitCommit,
-            b'tree': GitTree,
-            b'tag': GitTag,
-            b'blob': GitBlob,
-        }
-
-        if fmt not in object_types:
-            raise Exception("Unknown type {0} for object {1}".format(fmt.decode("ascii"), sha))
-
+        match fmt:
+            case b'commit' : c=GitCommit
+            case b'tree'   : c=GitTree
+            case b'tag'    : c=GitTag
+            case b'blob'   : c=GitBlob
+            case _:
+                raise Exception("Unknown type {0} for object {1}".format(fmt.decode("ascii"), sha))
         # Call constructor
-        return object_types[fmt](repo, raw[y + 1:])
+        return c(raw[y + 1:])
 
         
 def objectWrite(obj, repo=None):
@@ -76,13 +74,14 @@ def objectWrite(obj, repo=None):
 
     if repo:
         # Compute path
-        path=vfRepo.repoFile(repo, "objects", sha[0:2], sha[2:], mkdir=True)
+        path=repoFile(repo, "objects", sha[0:2], sha[2:], mkdir=True)
 
         if not os.path.exists(path):
             with open(path, 'wb') as f:
                 # Compress and write
                 f.write(zlib.compress(result))
     return sha
+
 def objectFind(repo, name, fmt=None, follow=True):
     return name
 

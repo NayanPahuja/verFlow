@@ -3,26 +3,27 @@
 import argparse
 import sys
 import os
-import verFlowRepository as vfrepo
+from verFlowRepository import repoCreate, repoFile, repoFind, repoPath, repoDir, repoDefaultConfig
 from object import objectRead, objectFind, objectWrite
-from object import GitBlob
+from object import GitBlob, GitCommit
+from kvlmParser import kvlmParse, kvlmSerialize
 
 """ INITIALIZE THE REPOSITORY || CREATE THE REPO """
 def cmd_init(args):
-    vfrepo.repoCreate(args.path)
+    repoCreate(args.path)
 
 """Output the contents of a file(type object) to stdout"""
 def cmd_cat_file(args):
-    repo = vfrepo.repoFind()
+    repo = repoFind()
     cat_file(repo,args.object,fmt = args.type.encode())
 
 def cat_file(repo,obj,fmt = None):
-    objectRead(repo,objectFind(repo,obj,fmt = fmt))
+    obj = objectRead(repo,objectFind(repo,obj,fmt = fmt))
     sys.stdout.buffer.write(obj.serialize())
 """Hash the object and write back(optional)"""
 def cmd_hash_object(args):
     if args.write:
-        repo = vfrepo.repoFind()
+        repo = repoFind()
     else:
         repo = None
 
@@ -44,8 +45,28 @@ def objectHash(fd,fmt,repo = None):
 
 ### Add Packfile Implementation with index optional
 
+### log command using graphviz
+def cmd_log(args):
+    repo = repoFind()
 
+    print("Graph of verFlow Log{")
+    print(" node[shape = rect]")
+    logGraphviz(repo,objectFind(repo,args.commit), set())
+    print("}")
 
+def logGraphviz(repo, sha, commitSeen):
+
+    if sha in commitSeen:
+        return
+    commitSeen.add(sha)
+
+    commit = objectRead(repo,sha)
+    shortHash = sha[0:8]
+    message = commit.kvlm[None].decode("utf-8").strip()
+    message = message.replace("\\", "\\\\")
+    message  = message.replace("\"", "\\\"")
+
+    
 
 def cmd_add(args):
     # Placeholder function

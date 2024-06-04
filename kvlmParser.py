@@ -10,8 +10,8 @@ def kvlmParse(raw,start = 0, dct = None):
         dct = collections.OrderedDict() ##Create a new dict
 
         # find next space and next new line
-        spc = raw.find(b' ',start)
-        nl = raw.find(b'\n',start)
+    spc = raw.find(b' ',start)
+    nl = raw.find(b'\n',start)
     # Base case
     # =========
     # If newline appears first (or there's no space at all, in which
@@ -59,7 +59,7 @@ def kvlmSerialize(kvlm):
 
         val = kvlm[k]
 
-        if(type(val) != list):
+        if type(val) != list:
             val = [ val ]
 
         for v in val:

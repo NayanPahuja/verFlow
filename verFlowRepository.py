@@ -78,11 +78,11 @@ def repoCreate(path):
   assert(repoDir(repo, "refs", "tags", mkdir=True))
   assert(repoDir(repo, "refs", "heads", mkdir=True))
 
-  # .git/description
+  # .ver_flow/description
   with open(repoFile(repo, "description"), "w") as f:
     f.write("Unnamed repository; edit this file 'description' to name the repository.\n")
   
-  # .git/HEAD
+  # .ver_flow/HEAD
   with open(repoFile(repo, "HEAD"), "w") as f:
     f.write("ref: refs/heads/master\n")
 
@@ -105,7 +105,7 @@ def repoDefaultConfig():
 #function for finding the root of repo
 def repoFind(path = ".",required = True):
   path = os.path.realpath(path)
-  if os.path.isdir(os.path.join(path, ".git")):
+  if os.path.isdir(os.path.join(path, ".ver_flow")):
     return vfREPO(path)
   
   #if we don't find the repo, recurse back in directories to find it in parent dirs
