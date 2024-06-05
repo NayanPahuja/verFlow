@@ -1,13 +1,13 @@
 # commandBridge.py
-
+import collections
 import argparse
 import sys
 import os
 from verFlowRepository import repoCreate, repoFile, repoFind, repoPath, repoDir, repoDefaultConfig
 from object import objectRead, objectFind, objectWrite
-from object import GitBlob, GitCommit, GitTree
+from object import GitBlob, GitCommit, GitTree, GitTag
 from kvlmParser import kvlmParse, kvlmSerialize
-
+from vfRefs import refsList, refResolver
 """ INITIALIZE THE REPOSITORY || CREATE THE REPO """
 def cmd_init(args):
     repoCreate(args.path)
@@ -158,7 +158,47 @@ def treeCheckout(repo, tree, path):
             with open(dest, 'wb') as f:
                 f.write(obj.blobdata)
 
+def cmd_show_ref(args):
+    repo = repoFind()
+    refs = refsList(repo)
 
+    showRefs(repo, refs, prefix="refs")
+
+def showRefs(repo, refs, with_hash = True, prefix = ""):
+    for k,v in refs.items():
+        if type(v) == str:
+            print("{0}{1}{2}".format(
+                v + " " if with_hash  else "",
+                prefix + "/" if prefix else "",
+                k))
+        else:
+            showRefs(repo, v, with_hash = with_hash , prefix="{0}{1}{2}".format(prefix, "/" if prefix else "", k))
+
+def cmd_tag(args):
+    repo  = repoFind()
+
+    if args.name:
+        createTag(repo,
+                  args.name,
+                  args.object,
+                  type="object" if args.createTagObject else "ref")
+    else:
+        refs = refsList(repo)
+        showRefs(repo, refs["tags"], with_hash=False)
+
+def createTag(repo,name, ref, createTagObject = False):
+    # get the GitObject from the object reference
+
+    sha = objectFind(repo,ref)
+
+    if createTagObject:
+        tag = GitTag(repo)
+        tag.kvlm = collections.OrderedDict()
+        tag.kvlm[b'object'] = sha.encode()
+        tag.kvlm[b'type'] = b'commit'
+        tag.kvlm[b'tag'] = name.encode()
+
+    
 def cmd_add(args):
     # Placeholder function
     pass
@@ -167,11 +207,6 @@ def cmd_commit(args):
     # Placeholder function
     pass
 
-def cmd_checkout(args):
-    # Placeholder function
-    pass
-
-# ... other command functions
 
 # Function to map command to handler
 def handle_command(args):

@@ -84,9 +84,28 @@ argsp.add_argument("commit",
 argsp.add_argument("path",
                    help="The empty dir to checkout on")
 
+## Subparser for cmd_show_refs
+
+argsp = argsubparsers.add_parser("show-refs",help="List the references created! ")
 
 
+## Subparser for cmd_tag
 
+argsp = argsubparsers.add_parser("tag",help="List and Create tags")
+
+argsp.add_argument("-a",
+                   action="store_true",
+                   dest="create_tag_object",
+                   help="Whether to create a tag object")
+
+argsp.add_argument("name",
+                   nargs="?",
+                   help="The new tag's name")
+
+argsp.add_argument("object",
+                   default="HEAD",
+                   nargs="?",
+                   help="The object the tag will point to")
 
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)
