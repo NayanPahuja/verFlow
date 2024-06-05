@@ -66,6 +66,28 @@ argsp.add_argument("commit",
                    nargs="?",
                    help="Commits to start the log at.")
 
+## Subparser for cmd ls tree
+
+argsp = argsubparsers.add_parser("ls-tree",help="Print a tree object")
+argsp.add_argument("-r",
+                   dest="recursive",
+                   action="store_true",
+                   help='Recurse into sub-trees')
+argsp.add_argument("tree", help="A tree object")
+
+## Subparser for cmd_checkout
+
+argsp = argsubparsers.add_parser("checkout",help="Checkout to commit inside of a directory")
+
+argsp.add_argument("commit",
+                   help="The commit or tree to checkout")
+argsp.add_argument("path",
+                   help="The empty dir to checkout on")
+
+
+
+
+
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)
     commandBridge.handle_command(args)

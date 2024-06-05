@@ -5,7 +5,7 @@ import zlib
 #importing other files
 from verFlowRepository import repoFile
 from kvlmParser import kvlmParse,kvlmSerialize
-
+from verFlowTree import treeParser, treeSerialize
 
 
 class VerFlowObject (object):
@@ -105,3 +105,15 @@ class GitCommit(VerFlowObject):
     
     def init(self):
         self.kvlm = dict()
+
+class GitTree(VerFlowObject):
+    fmt = b'tree'
+
+    def deserialize(self, data):
+       self.items = treeParser(data)
+
+    def serialize(self,):
+        return treeSerialize(self)
+    
+    def init(self):
+        self.items = list()

@@ -5,7 +5,7 @@ import sys
 import os
 from verFlowRepository import repoCreate, repoFile, repoFind, repoPath, repoDir, repoDefaultConfig
 from object import objectRead, objectFind, objectWrite
-from object import GitBlob, GitCommit
+from object import GitBlob, GitCommit, GitTree
 from kvlmParser import kvlmParse, kvlmSerialize
 
 """ INITIALIZE THE REPOSITORY || CREATE THE REPO """
@@ -66,7 +66,98 @@ def logGraphviz(repo, sha, commitSeen):
     message = message.replace("\\", "\\\\")
     message  = message.replace("\"", "\\\"")
 
+    if "\n" in message:
+        message = message[:message.index('\n')]
     
+    print("  c_{0} [label=\"{1}: {2}\"]".format(sha, sha[0:7], message))
+    assert commit.fmt==b'commit'
+
+    if not b'parent' in commit.kvlm.keys():
+        #Initial Commit
+        return
+    
+    parents = commit.kvlm[b'parent']
+    if type(parents) != list:
+        parents = [ parents ]
+
+    for p in parents:
+        p = p.decode("ascii")
+        print ("  c_{0} -> c_{1};".format(sha, p))
+        logGraphviz(repo, p, commitSeen)
+    
+
+def cmd_ls_tree(args):
+    repo  = repoFind()
+    ls_tree(repo,args.tree, args.recursive)
+
+def ls_tree(repo, ref, recursive = None, prefix = ""):
+    sha = objectFind(repo, ref, fmt=b"tree")
+    obj = objectRead(repo,sha)
+
+    for item in obj.items:
+        if len(item.mode)  == 5:
+            type = item.mode[0:1]
+        else:
+            type = item.moode[0:2]
+
+        match type: # Determine the type.
+            case b'04': type = "tree"
+            case b'10': type = "blob" # A regular file.
+            case b'12': type = "blob" # A symlink. Blob contents is link target.
+            case b'16': type = "commit" # A submodule
+            case _: raise Exception("Weird tree leaf mode {}".format(item.mode))
+
+        if not (recursive and type=='tree'): # This is a leaf
+            print("{0} {1} {2}\t{3}".format(
+                "0" * (6 - len(item.mode)) + item.mode.decode("ascii"),
+                #ls-tree displays the type
+                # of the object pointed to.  
+                type,
+                item.sha,
+                os.path.join(prefix, item.path)))
+        else: # This is a branch, recurse
+            ls_tree(repo, item.sha, recursive, os.path.join(prefix, item.path))
+
+
+def cmd_checkout(args):
+
+    repo = repoFind()
+    
+    obj = objectRead(repo, objectFind(repo,args.commit))
+
+
+    # If the object is a commit, we grab its tree
+    if obj.fmt == b"commit":
+        obj = objectRead(repo, obj.kvlm[b'tree'].decode("ascii"))
+
+    #Verify the path exists
+
+    if os.path.exists(args.path):
+        if not os.path.isdir(args.path):
+            raise Exception("Not a directory {0}!".format(args.path))
+        if os.listdir(args.path):
+            raise Exception("Not empty {0}!".format(args.path))
+    else:
+        os.makedirs(args.path)
+
+    treeCheckout(repo,obj, os.path.realpath(args.path))
+
+
+def treeCheckout(repo, tree, path):
+
+    for item in tree.items:
+        obj = objectRead(repo, item.sha)
+        dest = os.path.join(path,item.path)
+
+
+        if obj.fmt == b'tree':
+            os.mkdir(dest)
+            treeCheckout(repo, obj, dest)
+        elif obj.fmt == b'blob':
+            # @TODO Support symlinks (identified by mode 12****)
+            with open(dest, 'wb') as f:
+                f.write(obj.blobdata)
+
 
 def cmd_add(args):
     # Placeholder function
