@@ -19,7 +19,7 @@ from verFlowRepository import repoFile, repoDir
 # example ref : 6071c08bcb4757d8c89a30d9755d2466cef8c1de or ref: refs/remotes/origin/master
 
 def refResolver(repo, ref):
-
+    """Takes repo and reference and resolves it"""
     path = repoFile(repo,ref)
 
     # Sometimes, an indirect reference may be broken.  This is normal

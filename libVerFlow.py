@@ -95,7 +95,7 @@ argsp = argsubparsers.add_parser("tag",help="List and Create tags")
 
 argsp.add_argument("-a",
                    action="store_true",
-                   dest="create_tag_object",
+                   dest="createTagObject",
                    help="Whether to create a tag object")
 
 argsp.add_argument("name",
