@@ -260,7 +260,7 @@ def cmd_ls_files(args):
                     entry.flag_stage,
                     entry.flag_assume_valid))
             
-            
+
 
 def cmd_add(args):
     # Placeholder function
@@ -295,5 +295,7 @@ def handle_command(args):
         cmd_tag(args)
     elif args.command == "rev-parse":
         cmd_rev_parse(args)
+    elif args.command == "ls-files":
+        cmd_ls_files(args)
     else:
         raise ValueError("Unknown command: {}".format(args.command))

@@ -96,11 +96,11 @@ I welcome contributions to enhance verFlow! If you have suggestions or improveme
 
 ## License
 
-This project is licensed under the MIT License.
+The program is licensed under the terms of the GNU General Public License 3.0, or any later version of the same licence.
 
 ## Acknowledgements
 
-This project is inspired by the "WYAG" (What You Actually Git) project. Special thanks to its creator.
+This project is inspired by the "[WYAG](https://wyag.thb.lt/)" (What You Actually Git) project. Special thanks to its creator.
 ---
 
 Feel free to modify this README to better fit the specifics of your project. Happy coding!
