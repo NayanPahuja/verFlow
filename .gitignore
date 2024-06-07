@@ -1,2 +1,2 @@
-__pycache__
-libwyag.py
+__pycache__/
+*.py[cod]

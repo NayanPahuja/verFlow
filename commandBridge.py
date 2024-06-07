@@ -11,6 +11,7 @@ from object import GitBlob, GitCommit, GitTree, GitTag
 from kvlmParser import kvlmParse, kvlmSerialize
 from vfRefs import refsList, refResolver
 from vf_indexFile import indexRead
+from vf_ignore import vfignoreRead, checkIgnore
 """ INITIALIZE THE REPOSITORY || CREATE THE REPO """
 def cmd_init(args):
     repoCreate(args.path)
@@ -261,6 +262,19 @@ def cmd_ls_files(args):
                     entry.flag_assume_valid))
             
 
+def cmd_check_ignore(args):
+    """Checks the paths to ignore"""
+    #Find repo as usual
+    repo = repoFind()
+
+    #rules to check ?: ignore what file
+
+    rules = vfignoreRead(repo)
+    for path in args.path:
+        if checkIgnore(rules,path):
+            print(path)
+
+
 
 def cmd_add(args):
     # Placeholder function
@@ -297,5 +311,7 @@ def handle_command(args):
         cmd_rev_parse(args)
     elif args.command == "ls-files":
         cmd_ls_files(args)
+    elif args.command == "check-ignore":
+        cmd_check_ignore(args)
     else:
         raise ValueError("Unknown command: {}".format(args.command))
