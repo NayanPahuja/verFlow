@@ -107,6 +107,10 @@ argsp.add_argument("object",
                    nargs="?",
                    help="The object the tag will point to")
 
+## Subparser for rev-parse command
+
+argsp = argsubparsers.add_parser("rev-parse", help="Parse revision (or other objects) identifiers")
+
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)
     commandBridge.handle_command(args)
