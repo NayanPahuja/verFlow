@@ -111,6 +111,21 @@ argsp.add_argument("object",
 
 argsp = argsubparsers.add_parser("rev-parse", help="Parse revision (or other objects) identifiers")
 
+argsp.add_argument("--wyag-type",
+                   metavar="type",
+                   dest="type",
+                   choices=["blob","commit","tag","tree"],
+                   default=None,
+                   help="Specify the expected type")
+argsp.add_argument("name",
+                   help="The name to parse")
+
+
+argsp = argsubparsers.add_parser("ls-files", help= "List all the files currently in staging area")
+
+argsp.add_argument("--verbose",
+                   action="store_true",help="Show everything")
+
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)
     commandBridge.handle_command(args)

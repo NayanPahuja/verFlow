@@ -3,11 +3,14 @@ import collections
 import argparse
 import sys
 import os
+import grp, pwd
+from datetime import datetime
 from verFlowRepository import repoCreate, repoFile, repoFind, repoPath, repoDir, repoDefaultConfig
 from object import objectRead, objectFind, objectWrite
 from object import GitBlob, GitCommit, GitTree, GitTag
 from kvlmParser import kvlmParse, kvlmSerialize
 from vfRefs import refsList, refResolver
+from vf_indexFile import indexRead
 """ INITIALIZE THE REPOSITORY || CREATE THE REPO """
 def cmd_init(args):
     repoCreate(args.path)
@@ -210,7 +213,55 @@ def createTag(repo,name, ref, createTagObject = False):
 def createRef(repo, ref_name, sha):
     with open(repoFile(repo, "refs/" + ref_name), 'w') as fp:
         fp.write(sha + "\n")
-    
+
+# Cmd Rev Parse
+
+def cmd_rev_parse(args):
+    """Parses a given type of object and prints hash"""
+    if args.type:
+        fmt = args.type.encode()
+    else:
+        fmt = None
+
+    repo = repoFind()
+    print (objectFind(repo, args.name, fmt, follow=True))
+
+
+def cmd_ls_files(args):
+    """Outputs all the files present in staging area"""
+    #Get Repo
+    repo = repoFind()
+
+    #Get Index File
+    index = indexRead(repo)
+
+    if args.verbose:
+        print("Index file format v{}, containing {} entries.".format(index.version, len(index.entries)))
+
+    for entry in index.entries:
+        print(entry.name)
+        if args.verbose:
+            print("  {} with perms: {:o}".format({ 0b1000: "regular file", 
+                    0b1010: "symlink", 0b1110: "git link" }[entry.mode_type],entry.mode_perms))
+            print("  on blob: {}".format(entry.sha))
+            print(" Created On : {}.{} , modified on : {}.{}".format(
+                    datetime.fromtimestamp(entry.ctime[0])
+                    , entry.ctime[1]
+                    , datetime.fromtimestamp(entry.mtime[0])
+                    , entry.mtime[1]))
+            print("  device: {}, inode: {}".format(entry.dev, entry.ino))
+            print("  user: {} ({})  group: {} ({})".format(
+                    pwd.getpwuid(entry.uid).pw_name,
+                    entry.uid,
+                    grp.getgrgid(entry.gid).gr_name,
+                    entry.gid
+                ))
+            print("  flags: stage={} assume_valid={}".format(
+                    entry.flag_stage,
+                    entry.flag_assume_valid))
+            
+            
+
 def cmd_add(args):
     # Placeholder function
     pass
@@ -242,5 +293,7 @@ def handle_command(args):
         cmd_show_ref(args)
     elif args.command == "tag":
         cmd_tag(args)
+    elif args.command == "rev-parse":
+        cmd_rev_parse(args)
     else:
         raise ValueError("Unknown command: {}".format(args.command))
