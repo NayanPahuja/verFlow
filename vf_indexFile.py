@@ -1,5 +1,15 @@
+import argparse
 import os
+import collections
+import configparser
+import sys
+from datetime import datetime
+import grp, pwd
+from fnmatch import fnmatch
+import hashlib
 from math import ceil
+import re
+import zlib
 
 from verFlowRepository import repoFile
 
@@ -184,3 +194,65 @@ def indexRead(repo):
                                      name=name))
       
    return vfIndex(version = version, entries = entries)
+
+
+def indexWrite(repo, index):
+    with open(repoFile(repo, "index"), "wb") as f:
+        # HEADER
+        # TYPE
+        f.write(b"DIRC")
+        
+        # VERSION
+        f.write(index.version.to_bytes(4, "big"))
+        
+        # Write the number of entries.
+        f.write(len(index.entries).to_bytes(4, "big"))
+
+        # ENTRIES
+        for e in index.entries:
+            f.write(e.ctime[0].to_bytes(4, "big"))
+            f.write(e.ctime[1].to_bytes(4, "big"))
+            f.write(e.mtime[0].to_bytes(4, "big"))
+            f.write(e.mtime[1].to_bytes(4, "big"))
+            f.write(e.dev.to_bytes(4, "big"))
+            f.write(e.ino.to_bytes(4, "big"))
+            
+            # MODE
+            mode = (e.mode_type << 12) | e.mode_perms
+            f.write(mode.to_bytes(4, "big"))
+            
+            # UID
+            f.write(e.uid.to_bytes(4, "big"))
+            
+            # GID
+            f.write(e.gid.to_bytes(4, "big"))
+            
+            # FILE SIZE
+            f.write(e.fsize.to_bytes(4, "big"))
+            
+            # SHA
+            f.write(int(e.sha, 16).to_bytes(20, "big"))
+            
+            # FLAGS
+            flag_assume_valid = 0x1 << 15 if e.flag_assume_valid else 0
+            name_bytes = e.name.encode("utf8")
+            bytes_len = len(name_bytes)
+            if bytes_len > 0xFFF:
+                name_length = 0xFFF
+            else:
+                name_length = bytes_len
+            
+            # FLAGS - write the flags field
+            flags = (flag_assume_valid | e.flag_stage | name_length) & 0xFFFF
+            f.write(flags.to_bytes(2, "big"))
+            
+            # Write the name
+            f.write(name_bytes)
+            f.write((0).to_bytes(1, "big"))
+            
+            # Null bytes padding to ensure that the entry is a multiple of 8 bytes
+            if idx % 8 != 0:
+              pad = 8 - (idx % 8)
+              f.write((0).to_bytes(pad, "big"))
+              idx += pad
+

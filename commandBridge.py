@@ -274,6 +274,128 @@ def cmd_check_ignore(args):
         if checkIgnore(rules,path):
             print(path)
 
+def cmd_status(_):
+    repo = repoFind()
+    index = indexRead(repo)
+    
+    cmd_status_branch(repo)
+    cmd_status_head_index(repo,index)
+    print()
+    cmd_status_index_worktree(repo, index)
+
+def cmd_status_branch(repo):
+    branch = getActiveBranch(repo)
+    if branch:
+        print("On branch {}.".format(branch))
+    else:
+        print("HEAD detached at {}".format (objectFind(repo, "HEAD")))
+
+def getActiveBranch(repo):
+    with open(repoFile(repo,"HEAD"),"r") as f:
+        head = f.read()
+    
+    if f.startswith("ref: refs/heads/"):
+        return(head[16:-1])
+    else:
+        return False
+    
+def treeToDict(repo, ref, prefix = ""):
+    ret = dict()
+    tree_sha = objectFind(repo,ref,fmt = b'tree')
+    tree = objectRead(repo,tree_sha)
+
+    for leaf in tree.items:
+        full_path = os.path.join(prefix, leaf.path)
+        # We read the object to extract its type (this is uselessly
+        # expensive: we could just open it as a file and read the
+        # first few bytes)
+        is_subtree = leaf.mode.startswith(b'04')
+        # Depending on the type, we either store the path (if it's a
+        # blob, so a regular file), or recurse (if it's another tree,
+        # so a subdir)
+        if is_subtree:
+            ret.update(treeToDict(repo,leaf.sha,full_path))
+        else:
+            ret[full_path] = leaf.sha
+
+    return ret
+# Finding changes between HEAD and index
+def cmd_status_head_index(repo,index):
+    """Compares head and index to print files yet to be committed """
+    print("Changes yet to be committed")
+    head = treeToDict(repo,"HEAD")
+
+    for entry in index.entries:
+        if entry.name  in head:
+            if head[entry.name] != entry.sha:
+                print("  modified:", entry.name)
+            del head[entry.name] # Delete the key
+        else:
+            print("  added:   ", entry.name)
+    # Keys still in HEAD are files that we haven't met in the index,
+    # and thus have been deleted.
+    for entry in head.keys():
+        print("  deleted: ", entry)
+
+
+# Finding changes between index and worktree
+def cmd_status_index_worktree(repo,index):
+    print("Changes not yet staged for commit: ")
+
+    #files to ignore
+    ignore = vfignoreRead(repo)
+    gitdir_prefix = repo.gitdir + os.path.sep
+
+    all_files = list()
+
+    # We begin by walking the filesystem
+
+    for (root, _, files) in os.walk(repo.worktree, True):
+        if root==repo.gitdir or root.startswith(gitdir_prefix):
+            continue
+        
+        for f in files:
+            full_path = os.path.join(root,f)
+            rel_path = os.path.join(full_path,repo.worktree)
+            all_files.append(rel_path)
+    
+    # We now traverse the index, and compare real files with the cached
+    # versions.
+    for entry in index.entries:
+        full_path = os.path.join(repo.worktree, entry.name)
+        # That file *name* is in the index
+
+        if not os.path.exists(full_path):
+            print(" deleted : ", entry.name)
+        else:
+            stat = os.stat(entry.name)
+
+            # Compare metadata
+
+            ctime_ns = entry.ctime[0] * 10**9 + entry.ctime[1]
+            mtime_ns = entry.mtime[0] * 10**9 + entry.mtime[1]
+
+            if (stat.st_ctime_ns != ctime_ns) or (stat.st_mtime_ns != mtime_ns):
+
+                #if times are different deeply compare
+                with open(full_path, "rb") as fd:
+                    new_sha = objectHash(fd,b"blob",None)
+                    #compare hashes for verification
+                    same = entry.sha == new_sha
+
+                    if not same:
+                        print("  modified:",entry.name)
+
+        if entry.name in all_files:
+            all_files.remove(entry.name)
+    print()
+    print("Untracked files:")
+
+    for f in all_files:
+        # @TODO If a full directory is untracked, we should display
+        # its name without its contents.
+        if not checkIgnore(ignore, f):
+            print(" ", f)               
 
 
 def cmd_add(args):
@@ -313,5 +435,7 @@ def handle_command(args):
         cmd_ls_files(args)
     elif args.command == "check-ignore":
         cmd_check_ignore(args)
+    elif args.command == "status":
+        cmd_status()
     else:
         raise ValueError("Unknown command: {}".format(args.command))

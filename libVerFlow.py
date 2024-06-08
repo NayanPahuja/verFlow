@@ -126,6 +126,23 @@ argsp = argsubparsers.add_parser("ls-files", help= "List all the files currently
 argsp.add_argument("--verbose",
                    action="store_true",help="Show everything")
 
+# Subparser for check-ignore command 
+
+argsp = argsubparsers.add_parser("check-ignore",
+                                 help="Check path(s) against ignore rules")
+argsp.add_argument("path",
+                   nargs="+",
+                   help="Path to check")
+# Subparser for  status command
+argsp = argsubparsers.add_parser("status",
+                                 help= "Show the current status of worktree")
+
+# SubParser for rm command
+argsp = argsubparsers.add_parser("rm",help="Remove files from the working tree and the index")
+argsp.add_argument("path",
+                   nargs="+",
+                   help="Path of files to remove")
+
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)
     commandBridge.handle_command(args)

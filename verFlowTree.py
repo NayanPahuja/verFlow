@@ -63,3 +63,5 @@ def treeSerialize(obj):
         sha = int(i.sha,16)
         ret += sha.to_bytes(20, byteorder="big")
     return ret
+
+
