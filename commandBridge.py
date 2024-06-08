@@ -10,8 +10,10 @@ from object import objectRead, objectFind, objectWrite
 from object import GitBlob, GitCommit, GitTree, GitTag
 from kvlmParser import kvlmParse, kvlmSerialize
 from vfRefs import refsList, refResolver
-from vf_indexFile import indexRead
+from vf_indexFile import indexRead, indexWrite
+from vf_indexFile import vfIndexEntry
 from vf_ignore import vfignoreRead, checkIgnore
+from vf_commit import treeFromIndex, getUserFromConfig, vfConfigRead
 """ INITIALIZE THE REPOSITORY || CREATE THE REPO """
 def cmd_init(args):
     repoCreate(args.path)
@@ -36,6 +38,7 @@ def cmd_hash_object(args):
         print(sha)
 
 def objectHash(fd,fmt,repo = None):
+    """Given an object it generates the hash of that specific object"""
     data = fd.read()
     
     match fmt:
@@ -397,14 +400,131 @@ def cmd_status_index_worktree(repo,index):
         if not checkIgnore(ignore, f):
             print(" ", f)               
 
+def cmd_rm(args):
+    repo = repoFind()
+    rm(repo, args.path)
 
-def cmd_add(args):
-    # Placeholder function
-    pass
+def rm(repo, paths, delete = True, skip_missing = False):
+    # Find and read the index
+    index = indexRead(repo)
+    worktree = repo.worktree + os.sep
+
+    #Make Paths absolute
+    abspaths = list()
+    for path in paths:
+        abspath = os.path.abspath(path)
+        if abspath.startswith(worktree):
+            abspaths.append(abspath)
+        else:
+            raise Exception("Cannot remove paths outside of worktree: {}".format(paths))
+    
+    kept_entries = list()
+    remove = list()
+
+    for e in index.entries:
+        full_path = os.path.join(repo.worktree, e.name)
+        
+        if full_path in abspaths:
+            remove.append(full_path)
+            abspaths.remove(full_path)
+        else:
+            kept_entries.append(e)
+
+    if len(abspaths) > 0 and not skip_missing:
+        raise Exception("Cannot remove paths not in the index: {}".format(abspaths))
+    if delete:
+        for path in remove:
+            os.unlink(path)
+    
+    index.entries = kept_entries
+    indexWrite(repo,index)
+
+def cmd_add(args): 
+    repo = repoFind()
+    vfadd(repo,args.path)
+
+def vfadd(repo, paths, delete = True, skip_missing = False):
+    rm(repo,paths, delete= False, skip_missing = True)
+
+    worktree = repo.worktree + os.sep
+
+  # Convert the paths to pairs: (absolute, relative_to_worktree).
+  # Also delete them from the index if they're present.
+
+    clean_paths = list()
+
+    for path in paths:
+        abspath = os.path.abspath(path)
+        if not (abspath.startswith(worktree) and os.path.isfile(abspath)):
+            raise Exception("Not a file, or outside the worktree: {}".format(paths))
+        relpath = os.path.relpath(abspath,repo.worktree)
+        clean_paths.append((abspath,  relpath))
+
+        index = indexRead(repo)
+
+        for (abspath,relpath) in clean_paths:
+            with open(abspath,"rb") as fd:
+                sha = objectHash(fd, b"blob", repo)
+            stat = os.stat(abspath)
+
+            ctime_s = int(stat.st_ctime)
+            ctime_ns = stat.st_ctime_ns % 10**9
+            mtime_s = int(stat.st_mtime)
+            mtime_ns = stat.st_mtime_ns % 10**9
+
+            entry = vfIndexEntry(ctime=(ctime_s, ctime_ns), mtime=(mtime_s, mtime_ns), dev=stat.st_dev, ino=stat.st_ino,
+                                    mode_type=0b1000, mode_perms=0o644, uid=stat.st_uid, gid=stat.st_gid,
+                                    fsize=stat.st_size, sha=sha, flag_assume_valid=False,
+                                    flag_stage=False, name=relpath)
+            index.entries.append(entry)
+
+            # Write the index back
+            indexWrite(repo, index)
+def commit_create(repo,tree,parent,author,timestamp,message):
+    commit = GitCommit()
+    commit.kvlm[b"tree"] = tree.encode("ascii")
+
+    if parent:
+        commit.kvlm[b"parent"] = parent.encode("ascii")
+    
+    #Format TimeZone
+    offset = int(timestamp.astimezone().utcoffset().total_seconds())
+    hours = offset // 3600
+    minutes = (offset % 3600) // 60
+
+    tz = "{}{:02}{:02}".format("+" if offset > 0 else "-", hours, minutes)
+
+    author = author + timestamp.strftime(" %s ") + tz
+
+    commit.kvlm[b"author"] = author.encode("utf8")
+    commit.kvlm[b"committer"] = author.encode("utf8")
+    commit.kvlm[None] = message.encode("utf8")
+
+    return objectWrite(commit, repo)
+
 
 def cmd_commit(args):
-    # Placeholder function
-    pass
+    repo = repoFind()
+    index = indexRead(repo)
+
+    tree = treeFromIndex(repo,index)
+    # Create the commit object itself
+
+    commit = commit_create(repo,
+                           tree,
+                           objectFind(repo, "HEAD"),
+                           getUserFromConfig(vfConfigRead()),
+                           datetime.now(),
+                           args.message)
+
+    # Update HEAD so our commit is now the tip of the active branch
+    active_branch = getActiveBranch(repo)
+    if active_branch:   # If we're on a branch, we update refs/heads/BRANCH
+        with open(repoFile(repo,os.path.join("refs/heads", active_branch)),"w") as fd:
+            fd.write(commit + "\n")
+    else:   # Otherwise, we update HEAD itself.
+        with open(repoFile(repo, "HEAD"), "w") as fd:
+            fd.write("\n")
 
 
 # Function to map command to handler
@@ -437,5 +557,7 @@ def handle_command(args):
         cmd_check_ignore(args)
     elif args.command == "status":
         cmd_status()
+    elif args.command == "rm":
+        cmd_rm(args)
     else:
         raise ValueError("Unknown command: {}".format(args.command))

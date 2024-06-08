@@ -142,6 +142,16 @@ argsp = argsubparsers.add_parser("rm",help="Remove files from the working tree a
 argsp.add_argument("path",
                    nargs="+",
                    help="Path of files to remove")
+# Subparser for add command
+argsp = argsubparsers.add_parser("add", help= "Add files contents to the index")
+argsp.add_argument("path", nargs="+", help="Files to add")
+
+# Subparser for commit command
+argsp = argsubparsers.add_parser("commit", help= "Record changes to the repository.")
+argsp.add_argument("-m",
+                   metavar="message",
+                   dest="message",
+                   help="Message to associate with this commit")
 
 def main(argv = sys.argv[1:]):
     args = argparser.parse_args(argv)
