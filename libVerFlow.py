@@ -111,7 +111,7 @@ argsp.add_argument("object",
 
 argsp = argsubparsers.add_parser("rev-parse", help="Parse revision (or other objects) identifiers")
 
-argsp.add_argument("--wyag-type",
+argsp.add_argument("--vf-type",
                    metavar="type",
                    dest="type",
                    choices=["blob","commit","tag","tree"],

@@ -111,7 +111,7 @@ def ls_tree(repo, ref, recursive = None, prefix = ""):
         if len(item.mode)  == 5:
             type = item.mode[0:1]
         else:
-            type = item.moode[0:2]
+            type = item.mode[0:2]
 
         match type: # Determine the type.
             case b'04': type = "tree"
@@ -189,12 +189,15 @@ def showRefs(repo, refs, with_hash = True, prefix = ""):
 
 def cmd_tag(args):
     repo  = repoFind()
-
+    if args.createTagObject:
+        objectTag = True
+    else:
+        objectTag = False
     if args.name:
         createTag(repo,
                   args.name,
                   args.object,
-                  type="object" if args.createTagObject else "ref")
+                  objectTag)
     else:
         refs = refsList(repo)
         showRefs(repo, refs["tags"], with_hash=False)
@@ -551,7 +554,7 @@ def handle_command(args):
         cmd_log(args)
     elif args.command == "ls-tree":
         cmd_ls_tree(args)
-    elif args.command == "show-ref":
+    elif args.command == "show-refs":
         cmd_show_ref(args)
     elif args.command == "tag":
         cmd_tag(args)
