@@ -53,7 +53,7 @@ def objectRead(repo, sha):
         if size != len(raw) - y - 1:
             raise Exception("Malformed object {0}: bad length".format(sha))
 
-        # Object type to class mapping
+        # Object type to format mapping
         match fmt:
             case b'commit' : c=GitCommit
             case b'tree'   : c=GitTree

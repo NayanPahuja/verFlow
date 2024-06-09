@@ -1,10 +1,16 @@
 # commandBridge.py
-import collections
 import argparse
-import sys
 import os
-import grp, pwd
+import collections
+import configparser
+import sys
 from datetime import datetime
+import grp, pwd
+from fnmatch import fnmatch
+import hashlib
+from math import ceil
+import re
+import zlib
 from verFlowRepository import repoCreate, repoFile, repoFind, repoPath, repoDir, repoDefaultConfig
 from object import objectRead, objectFind, objectWrite
 from object import GitBlob, GitCommit, GitTree, GitTag
@@ -277,7 +283,7 @@ def cmd_check_ignore(args):
         if checkIgnore(rules,path):
             print(path)
 
-def cmd_status(_):
+def cmd_status():
     repo = repoFind()
     index = indexRead(repo)
     
@@ -297,7 +303,7 @@ def getActiveBranch(repo):
     with open(repoFile(repo,"HEAD"),"r") as f:
         head = f.read()
     
-    if f.startswith("ref: refs/heads/"):
+    if head.startswith("ref: refs/heads/"):
         return(head[16:-1])
     else:
         return False
@@ -359,7 +365,7 @@ def cmd_status_index_worktree(repo,index):
         
         for f in files:
             full_path = os.path.join(root,f)
-            rel_path = os.path.join(full_path,repo.worktree)
+            rel_path = os.path.relpath(full_path,repo.worktree)
             all_files.append(rel_path)
     
     # We now traverse the index, and compare real files with the cached

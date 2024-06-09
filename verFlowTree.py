@@ -53,7 +53,7 @@ def treeLeafSortKey(leaf):
 
 def treeSerialize(obj):
     obj.items.sort(key = treeLeafSortKey)
-    ret = b' '
+    ret = b''
 
     for i in obj.items:
         ret += i.mode #mode

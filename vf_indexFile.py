@@ -209,6 +209,7 @@ def indexWrite(repo, index):
         f.write(len(index.entries).to_bytes(4, "big"))
 
         # ENTRIES
+        idx = 0
         for e in index.entries:
             f.write(e.ctime[0].to_bytes(4, "big"))
             f.write(e.ctime[1].to_bytes(4, "big"))
@@ -250,6 +251,7 @@ def indexWrite(repo, index):
             f.write(name_bytes)
             f.write((0).to_bytes(1, "big"))
             
+            idx += 62 + len(name_bytes) + 1
             # Null bytes padding to ensure that the entry is a multiple of 8 bytes
             if idx % 8 != 0:
               pad = 8 - (idx % 8)
