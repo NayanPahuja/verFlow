@@ -1,6 +1,6 @@
 # verFlow
 
-Welcome to verFlow, a simplified implementation of Git! This project is inspired by the "WYAG" (What You Actually Git) project, offering a minimalistic and understandable version of Git's core functionalities.
+Welcome to verFlow, a simplified implementation of Git! This project is inspired by the "WYAG" (Write Yourself A Git) project, offering a minimalistic and understandable version of Git's core functionalities.
 
 ## Table of Contents
 
@@ -100,7 +100,7 @@ The program is licensed under the terms of the GNU General Public License 3.0, o
 
 ## Acknowledgements
 
-This project is inspired by the "[WYAG](https://wyag.thb.lt/)" (What You Actually Git) project. Special thanks to its creator.
+This project is inspired by the "[WYAG](https://wyag.thb.lt/)" (Write Yourself A Git) project. Special thanks to its creator.
 ---
 
 Feel free to modify this README to better fit the specifics of your project. Happy coding!
