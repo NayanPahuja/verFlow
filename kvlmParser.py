@@ -9,7 +9,7 @@ def kvlmParse(raw,start = 0, dct = None):
     if not dct:
         dct = collections.OrderedDict() ##Create a new dict
 
-        # find next space and next new line
+    # find next space and next new line
     spc = raw.find(b' ',start)
     nl = raw.find(b'\n',start)
     # Base case
