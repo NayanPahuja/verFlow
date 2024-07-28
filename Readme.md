@@ -29,7 +29,7 @@ To get started with verFlow, follow these steps:
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/yourusername/verFlow.git
+    git clone https://github.com/NayanPahuja/verFlow.git
     ```
 2. **Navigate to the project directory**:
     ```sh
